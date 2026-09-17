@@ -52,7 +52,7 @@ export function FinderClient({ programs }: { programs: Program[] }) {
     ];
     const document = new Document({ sections: [{ children: [
       new Paragraph({ text: 'University Programme List', heading: HeadingLevel.HEADING_1 }),
-      new Paragraph({ text: `MYR fees converted at 1 MYR = 31 BDT. ${results.length} result(s).` }),
+      new Paragraph({ text: `${results.length} programme result(s). Fees are displayed in BDT where available.` }),
       new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
     ] }] });
     const blob = await Packer.toBlob(document);
@@ -65,9 +65,9 @@ export function FinderClient({ programs }: { programs: Program[] }) {
   };
 
   return <main className="min-h-screen bg-[#f5f7f4] text-[#16251f]">
-    <header className="no-print border-b border-[#dce5de] bg-white"><div className="mx-auto flex max-w-[1500px] items-center justify-between px-5 py-5 sm:px-8"><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-[#0b6b4f] text-white"><GraduationCap className="size-5" /></div><div><p className="text-lg font-semibold tracking-tight">University Hub</p><p className="text-xs text-[#66736d]">Programme finder</p></div></div><span className="rounded-full bg-[#e7efe9] px-3 py-1.5 text-xs font-medium text-[#0b6b4f]">Live Airtable data</span></div></header>
+    <header className="no-print overflow-hidden border-b border-[#164f40] bg-[#083f32] text-white"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-5 px-5 py-6 sm:px-8"><div className="flex items-center gap-4"><div className="grid size-12 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/20"><GraduationCap className="size-6" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a9d5c4]">RizeUp Global</p><p className="mt-1 text-xl font-semibold tracking-tight">University Hub</p></div></div><div className="hidden items-center gap-3 border-l border-white/20 pl-6 text-right sm:flex"><div><p className="text-sm font-medium">Explore global programmes</p><p className="mt-0.5 text-xs text-[#a9d5c4]">Compare courses, locations and fees</p></div></div></div></header>
     <section className="mx-auto max-w-[1500px] px-5 pb-14 pt-9 sm:px-8">
-      <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><p className="mb-2 text-sm font-semibold text-[#0b6b4f]">University programme database</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the right programme.</h1><p className="mt-3 text-base text-[#66736d]">MYR fees are converted at the fixed rate of 1 MYR = 31 BDT.</p></div><p className="text-sm text-[#66736d]"><strong className="text-[#16251f]">{results.length}</strong> of {programs.length} programmes</p></div>
+      <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><p className="mb-2 text-sm font-semibold text-[#0b6b4f]">University programme database</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the right programme.</h1></div><p className="text-sm text-[#66736d]"><strong className="text-[#16251f]">{results.length}</strong> of {programs.length} programmes</p></div>
       <div className="no-print mb-6 rounded-2xl border border-[#dce5de] bg-white p-4 shadow-[0_14px_35px_rgba(22,37,31,0.06)]"><div className="grid gap-3 xl:grid-cols-[minmax(260px,2fr)_1fr_1fr_1fr_auto]">
         <label className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#66736d]" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search university, course or city" className="h-11 pl-10" /></label>
         <NativeSelect aria-label="Country" value={country} onChange={(event) => setCountry(event.target.value)} className="h-11 w-full"><NativeSelectOption>All countries</NativeSelectOption>{countries.map((item) => <NativeSelectOption key={item}>{item}</NativeSelectOption>)}</NativeSelect>
