@@ -4,12 +4,24 @@ const baseId = 'appcJ8edCMgO0OBl7';
 const tableName = 'Imported table';
 const asText = (value: unknown) => Array.isArray(value) ? value.join(', ') : typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 
-function toProgram(record: AirtableRecord): Program {
+export function toProgram(record: AirtableRecord): Program {
   const fields = record.fields;
   const rawFee = asText(fields['Total Fees (intl)']);
   const numericFee = rawFee.replace(/[^0-9.]/g, '');
   const parsedFee = numericFee ? Number(numericFee) : null;
   return { id: record.id, university: asText(fields.University), country: asText(fields.Country) || 'Malaysia', campus: asText(fields.Campus), program: asText(fields.Program), level: asText(fields.Level), field: asText(fields.Field), duration: asText(fields.Duration), fee: parsedFee !== null && Number.isFinite(parsedFee) ? parsedFee : null, feeText: rawFee, currency: asText(fields.Currency) || 'MYR', notes: asText(fields.Notes), source: asText(fields['Source PDF']), verified: asText(fields['Last Verified']) };
+}
+
+export async function getProgramPage(offset?: string): Promise<{ programs: Program[]; offset?: string }> {
+  const token = process.env.AIRTABLE_TOKEN;
+  if (!token) throw new Error('The Airtable connection is not configured.');
+  const url = new URL(`https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`);
+  url.searchParams.set('pageSize', '100');
+  if (offset) url.searchParams.set('offset', offset);
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+  if (!response.ok) throw new Error('Airtable could not load the programme catalogue.');
+  const page = await response.json() as { records: AirtableRecord[]; offset?: string };
+  return { programs: page.records.map(toProgram), offset: page.offset };
 }
 
 export async function getPrograms(): Promise<Program[]> {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Download, FileText, GraduationCap, Printer, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
@@ -24,7 +24,10 @@ function feeFor(program: Program) {
   return `${program.currency || 'Fee'} ${number.format(program.fee)}`;
 }
 
-export function FinderClient({ programs }: { programs: Program[] }) {
+export function FinderClient({ programs: initialPrograms }: { programs: Program[] }) {
+  const [programs, setPrograms] = useState(initialPrograms);
+  const [loading, setLoading] = useState(initialPrograms.length === 0);
+  const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
   const [country, setCountry] = useState('All countries');
   const [level, setLevel] = useState('All levels');
@@ -41,6 +44,32 @@ export function FinderClient({ programs }: { programs: Program[] }) {
   }), [programs, query, country, level, maximumFee]);
   const reset = () => { setQuery(''); setCountry('All countries'); setLevel('All levels'); setMaximumFee(''); };
   const active = Boolean(query || country !== 'All countries' || level !== 'All levels' || maximumFee);
+
+  useEffect(() => {
+    if (initialPrograms.length) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        let offset = '';
+        const loaded: Program[] = [];
+        do {
+          const response = await fetch(`/api/programs${offset ? `?offset=${encodeURIComponent(offset)}` : ''}`);
+          if (!response.ok) throw new Error('Could not load the programme catalogue.');
+          const page = await response.json() as { programs: Program[]; offset?: string };
+          loaded.push(...page.programs);
+          if (!cancelled) setPrograms([...loaded]);
+          offset = page.offset || '';
+          if (offset) await new Promise((resolve) => setTimeout(resolve, 230));
+        } while (offset && !cancelled);
+      } catch (error) {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Could not load programmes.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [initialPrograms.length]);
 
   const downloadWord = () => {
     const rtf = (value: string) => value.replace(/[\\{}]/g, '\\$&').replace(/[^\x00-\x7F]/g, (character) => `\\u${character.charCodeAt(0)}?`);
@@ -60,7 +89,7 @@ export function FinderClient({ programs }: { programs: Program[] }) {
   return <main className="min-h-screen bg-[#f5f7f4] text-[#16251f]">
     <header className="no-print overflow-hidden border-b border-[#164f40] bg-[#083f32] text-white"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-5 px-5 py-6 sm:px-8"><div className="flex items-center gap-4"><div className="grid size-12 place-items-center rounded-2xl bg-white/12 ring-1 ring-white/20"><GraduationCap className="size-6" /></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#a9d5c4]">RizeUp Global</p><p className="mt-1 text-xl font-semibold tracking-tight">University Hub</p></div></div><div className="hidden items-center gap-3 border-l border-white/20 pl-6 text-right sm:flex"><div><p className="text-sm font-medium">Explore global programmes</p><p className="mt-0.5 text-xs text-[#a9d5c4]">Compare courses, locations and fees</p></div></div></div></header>
     <section className="mx-auto max-w-[1500px] px-5 pb-14 pt-9 sm:px-8">
-      <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><p className="mb-2 text-sm font-semibold text-[#0b6b4f]">University programme database</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the right programme.</h1></div><p className="text-sm text-[#66736d]"><strong className="text-[#16251f]">{results.length}</strong> of {programs.length} programmes</p></div>
+      <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><p className="mb-2 text-sm font-semibold text-[#0b6b4f]">University programme database</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Find the right programme.</h1></div><p className="text-sm text-[#66736d]">{loading ? `Loading programmes… ${programs.length}` : <><strong className="text-[#16251f]">{results.length}</strong> of {programs.length} programmes</>}{loadError && <span className="ml-2 text-red-700">{loadError}</span>}</p></div>
       <div className="no-print mb-6 rounded-2xl border border-[#dce5de] bg-white p-4 shadow-[0_14px_35px_rgba(22,37,31,0.06)]"><div className="grid gap-3 xl:grid-cols-[minmax(260px,2fr)_1fr_1fr_1fr_auto]">
         <label className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#66736d]" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search university, course or city" className="h-11 pl-10" /></label>
         <NativeSelect aria-label="Country" value={country} onChange={(event) => setCountry(event.target.value)} className="h-11 w-full"><NativeSelectOption>All countries</NativeSelectOption>{countries.map((item) => <NativeSelectOption key={item}>{item}</NativeSelectOption>)}</NativeSelect>
