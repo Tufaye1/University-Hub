@@ -24,10 +24,6 @@ function feeFor(program: Program) {
   return `${program.currency || 'Fee'} ${number.format(program.fee)}`;
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character] || character);
-}
-
 export function FinderClient({ programs }: { programs: Program[] }) {
   const [query, setQuery] = useState('');
   const [country, setCountry] = useState('All countries');
@@ -46,14 +42,24 @@ export function FinderClient({ programs }: { programs: Program[] }) {
   const reset = () => { setQuery(''); setCountry('All countries'); setLevel('All levels'); setMaximumFee(''); };
   const active = Boolean(query || country !== 'All countries' || level !== 'All levels' || maximumFee);
 
-  const downloadWord = () => {
-    const rows = results.map((program, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(program.university || '—')}</td><td>${escapeHtml(program.program || '—')}</td><td>${escapeHtml(cityFor(program))}</td><td>${escapeHtml(program.country || '—')}</td><td>${escapeHtml(program.duration || '—')}</td><td>${escapeHtml(program.level || '—')}</td><td>${escapeHtml(feeFor(program))}</td></tr>`).join('');
-    const content = `<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px;text-align:left}th{background:#e7efe9}</style></head><body><h1>University Programme List</h1><p>MYR fees converted at 1 MYR = 31 BDT. ${results.length} result(s).</p><table><thead><tr><th>No.</th><th>University</th><th>Course name</th><th>City</th><th>Country</th><th>Duration</th><th>Level</th><th>Fee</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
-    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+  const downloadWord = async () => {
+    const { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } = await import('docx');
+    const cell = (text: string, bold = false) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text, bold })] })] });
+    const headers = ['No.', 'University', 'Course name', 'City', 'Country', 'Duration', 'Level', 'Fee'];
+    const rows = [
+      new TableRow({ tableHeader: true, children: headers.map((heading) => cell(heading, true)) }),
+      ...results.map((program, index) => new TableRow({ children: [String(index + 1), program.university || '—', program.program || '—', cityFor(program), program.country || '—', program.duration || '—', program.level || '—', feeFor(program)].map((value) => cell(value)) })),
+    ];
+    const document = new Document({ sections: [{ children: [
+      new Paragraph({ text: 'University Programme List', heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: `MYR fees converted at 1 MYR = 31 BDT. ${results.length} result(s).` }),
+      new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
+    ] }] });
+    const blob = await Packer.toBlob(document);
     const url = URL.createObjectURL(blob);
     const link = window.document.createElement('a');
     link.href = url;
-    link.download = 'university-programmes.doc';
+    link.download = 'university-programmes.docx';
     link.click();
     URL.revokeObjectURL(url);
   };
