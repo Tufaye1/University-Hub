@@ -77,6 +77,14 @@
 
 body { min-height: 100vh; }
 
+@media print {
+  @page { size: landscape; margin: 12mm; }
+  .no-print { display: none !important; }
+  body { background: white !important; }
+  table { font-size: 9pt; }
+  tr { break-inside: avoid; }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
