@@ -42,24 +42,17 @@ export function FinderClient({ programs }: { programs: Program[] }) {
   const reset = () => { setQuery(''); setCountry('All countries'); setLevel('All levels'); setMaximumFee(''); };
   const active = Boolean(query || country !== 'All countries' || level !== 'All levels' || maximumFee);
 
-  const downloadWord = async () => {
-    const { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } = await import('docx');
-    const cell = (text: string, bold = false) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text, bold })] })] });
-    const headers = ['No.', 'University', 'Course name', 'City', 'Country', 'Duration', 'Level', 'Fee'];
-    const rows = [
-      new TableRow({ tableHeader: true, children: headers.map((heading) => cell(heading, true)) }),
-      ...results.map((program, index) => new TableRow({ children: [String(index + 1), program.university || '—', program.program || '—', cityFor(program), program.country || '—', program.duration || '—', program.level || '—', feeFor(program)].map((value) => cell(value)) })),
-    ];
-    const document = new Document({ sections: [{ children: [
-      new Paragraph({ text: 'University Programme List', heading: HeadingLevel.HEADING_1 }),
-      new Paragraph({ text: `${results.length} programme result(s). Fees are displayed in BDT where available.` }),
-      new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
-    ] }] });
-    const blob = await Packer.toBlob(document);
+  const downloadWord = () => {
+    const rtf = (value: string) => value.replace(/[\\{}]/g, '\\$&').replace(/[^\x00-\x7F]/g, (character) => `\\u${character.charCodeAt(0)}?`);
+    const row = (values: string[], bold = false) => `{${bold ? '\\b ' : ''}${values.map((value) => rtf(value)).join('\\tab ')}${bold ? '\\b0' : ''}\\par}`;
+    const headers = row(['No.', 'University', 'Course name', 'City', 'Country', 'Duration', 'Level', 'Fee'], true);
+    const rows = results.map((program, index) => row([String(index + 1), program.university || '—', program.program || '—', cityFor(program), program.country || '—', program.duration || '—', program.level || '—', feeFor(program)])).join('');
+    const content = `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\fs20{\\b\\fs30 University Programme List}\\par ${results.length} programme result(s). Fees are displayed in BDT where available.\\par\\par ${headers}${rows}}`;
+    const blob = new Blob([content], { type: 'application/rtf' });
     const url = URL.createObjectURL(blob);
     const link = window.document.createElement('a');
     link.href = url;
-    link.download = 'university-programmes.docx';
+    link.download = 'university-programmes.rtf';
     link.click();
     URL.revokeObjectURL(url);
   };
