@@ -75,7 +75,7 @@ async function fetchPage(start: number, pageSize: number) {
 
 export async function getProgramPage(offset?: string): Promise<{ programs: Program[]; offset?: string }> {
   const start = Number(offset ?? 0);
-  const pageSize = 100;
+  const pageSize = 1000;
   const rows = await fetchPage(start, pageSize);
   return {
     programs: rows.slice(0, pageSize).map(toProgram).filter(isProgrammeRecord),
