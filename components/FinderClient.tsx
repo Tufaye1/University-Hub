@@ -62,7 +62,6 @@ export function FinderClient({ programs: initialPrograms }: { programs: Program[
           loaded.push(...page.programs);
           if (!cancelled) setPrograms([...loaded]);
           offset = page.offset || '';
-          if (offset) await new Promise((resolve) => setTimeout(resolve, 230));
         } while (offset && !cancelled);
       } catch (error) {
         if (!cancelled) setLoadError(error instanceof Error ? error.message : 'Could not load programmes.');
