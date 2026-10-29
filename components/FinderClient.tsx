@@ -56,7 +56,7 @@ export function FinderClient({ programs: initialPrograms }: { programs: Program[
         let offset = '';
         const loaded: Program[] = [];
         do {
-          const response = await fetch(`/api/programs?v=20261030-csv1${offset ? `&offset=${encodeURIComponent(offset)}` : ''}`);
+          const response = await fetch(`/api/programs?v=20261030-csv2${offset ? `&offset=${encodeURIComponent(offset)}` : ''}`);
           if (!response.ok) throw new Error('Could not load the programme catalogue.');
           const page = await response.json() as { programs: Program[]; offset?: string };
           loaded.push(...page.programs);
