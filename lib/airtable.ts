@@ -64,7 +64,7 @@ async function fetchPage(start: number, pageSize: number) {
   url.searchParams.set('select', '*');
   url.searchParams.set('order', 'university.asc,program.asc,airtable_record_id.asc');
   url.searchParams.set('offset', String(start));
-  url.searchParams.set('limit', String(pageSize + 1));
+  url.searchParams.set('limit', String(pageSize));
   const response = await fetch(url, {
     headers: { apikey: publishableKey, Authorization: `Bearer ${publishableKey}` },
     cache: 'no-store',
@@ -79,7 +79,7 @@ export async function getProgramPage(offset?: string): Promise<{ programs: Progr
   const rows = await fetchPage(start, pageSize);
   return {
     programs: rows.slice(0, pageSize).map(toProgram).filter(isProgrammeRecord),
-    offset: rows.length > pageSize ? String(start + pageSize) : undefined,
+    offset: rows.length === pageSize ? String(start + pageSize) : undefined,
   };
 }
 
@@ -90,7 +90,7 @@ export async function getPrograms(): Promise<Program[]> {
   while (true) {
     const rows = await fetchPage(start, pageSize);
     programs.push(...rows.slice(0, pageSize).map(toProgram).filter(isProgrammeRecord));
-    if (rows.length <= pageSize) break;
+    if (rows.length < pageSize) break;
     start += pageSize;
   }
   return programs;
