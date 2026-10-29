@@ -31,7 +31,7 @@ const feeForFilter = (value: string) => {
 const isProgrammeRecord = (program: Program) => !/^institution directory listing\b/i.test(program.program);
 
 function toProgram(row: ProgrammeRow): Program {
-  const semesterFeeText = asText(row.semester_tuition_fee);
+  const semesterFeeText = asText(row.semester_tuition_fee) || asText(row.published_tuition_fee);
   const totalFeeText = asText(row.total_programme_tuition);
   const totalFee = feeForFilter(totalFeeText);
   return {
